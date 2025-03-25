@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import pandas as pd
 import numpy as np
 from scipy.spatial.distance import cosine
@@ -13,11 +10,9 @@ def create_utility_matrix(ratings):
 
 def calculate_user_similarity(utility_matrix, user1_id, user2_id):
     """Calculates similarity between two users using Cosine and Pearson metrics"""
-    # Extract rating vectors for both users
     user1_ratings = utility_matrix.loc[user1_id].values
     user2_ratings = utility_matrix.loc[user2_id].values
     
-    # Identify movies rated by both users
     common_movies_mask = ~np.isnan(user1_ratings) & ~np.isnan(user2_ratings)
     user1_common = user1_ratings[common_movies_mask]
     user2_common = user2_ratings[common_movies_mask]
@@ -26,7 +21,6 @@ def calculate_user_similarity(utility_matrix, user1_id, user2_id):
     if n_common == 0:
         return 0, 0, 0  # No movies in common
     
-    # Calculate similarities
     cosine_sim = 1 - cosine(user1_common, user2_common)
     pearson_sim, _ = pearsonr(user1_common, user2_common)
     
@@ -34,7 +28,6 @@ def calculate_user_similarity(utility_matrix, user1_id, user2_id):
 
 def calculate_movie_similarity(utility_matrix, movies_df, movie1_id, movie2_id):
     """Calculates similarity between two movies using Cosine and Pearson metrics"""
-    # Extract rating vectors for both movies
     if movie1_id not in utility_matrix.columns or movie2_id not in utility_matrix.columns:
         print(f"One of the movies (ID: {movie1_id} or {movie2_id}) is not in the utility matrix")
         return 0, 0, 0, "", ""
@@ -42,7 +35,6 @@ def calculate_movie_similarity(utility_matrix, movies_df, movie1_id, movie2_id):
     movie1_ratings = utility_matrix[movie1_id].values
     movie2_ratings = utility_matrix[movie2_id].values
     
-    # Identify users who rated both movies
     common_users_mask = ~np.isnan(movie1_ratings) & ~np.isnan(movie2_ratings)
     movie1_common = movie1_ratings[common_users_mask]
     movie2_common = movie2_ratings[common_users_mask]
@@ -51,11 +43,9 @@ def calculate_movie_similarity(utility_matrix, movies_df, movie1_id, movie2_id):
     if n_common == 0:
         return 0, 0, 0, "", ""  # No users in common
     
-    # Get movie titles
     movie1_title = movies_df[movies_df['movieId'] == movie1_id]['title'].values[0]
     movie2_title = movies_df[movies_df['movieId'] == movie2_id]['title'].values[0]
     
-    # Calculate similarities
     cosine_sim = 1 - cosine(movie1_common, movie2_common)
     pearson_sim, _ = pearsonr(movie1_common, movie2_common)
     
@@ -70,7 +60,6 @@ def get_interpretation(score, thresholds, messages):
 
 def interpret_similarity_results(cosine_sim_users, pearson_sim_users, cosine_sim_movies, pearson_sim_movies):
     """Interprets similarity results"""
-    # Define thresholds and messages for interpretation
     cosine_thresholds = [0.7, 0.4, -float('inf')]
     cosine_messages = {
         'user': [
@@ -103,7 +92,6 @@ def interpret_similarity_results(cosine_sim_users, pearson_sim_users, cosine_sim
         ]
     }
 
-    # Interpretation for users
     print("\n--- Result Interpretation ---")
     print("User similarity:")
     cosine_msg = get_interpretation(cosine_sim_users, cosine_thresholds, cosine_messages['user'])
@@ -112,7 +100,6 @@ def interpret_similarity_results(cosine_sim_users, pearson_sim_users, cosine_sim
     pearson_msg = get_interpretation(pearson_sim_users, pearson_thresholds, pearson_messages['user'])
     print(f"- Pearson: {pearson_sim_users:.4f} - {pearson_msg}")
 
-    # Interpretation for movies
     print("\nMovie similarity:")
     cosine_msg = get_interpretation(cosine_sim_movies, cosine_thresholds, cosine_messages['movie'])
     print(f"- Cosine: {cosine_sim_movies:.4f} - {cosine_msg}")
@@ -132,20 +119,17 @@ def run_question1(ratings, movies):
     print("\nMovies preview:")
     print(movies.head())
     
-    # Create utility matrix
     utility_matrix = create_utility_matrix(ratings)
     
     print("\nUtility matrix dimensions:", utility_matrix.shape)
     print("\nUtility matrix preview:")
     print(utility_matrix.iloc[:5, :5])  # Display first 5 rows and columns
     
-    # Analyze matrix density
     non_nan_values = utility_matrix.count().sum()
     total_cells = utility_matrix.size
     density = non_nan_values / total_cells * 100
     print(f"\nMatrix density: {density:.2f}% ({non_nan_values} ratings out of {total_cells} possible)")
     
-    # Select two users for comparison
     user1_id = 1
     user2_id = 2
     print(f"\nComparison between users {user1_id} and {user2_id}")
@@ -155,7 +139,6 @@ def run_question1(ratings, movies):
     print(f"Cosine similarity between users: {cosine_sim_users:.4f}")
     print(f"Pearson correlation between users: {pearson_sim_users:.4f}")
     
-    # Select two popular movies for comparison
     popular_movies = ratings.groupby('movieId').count().sort_values('rating', ascending=False).head(10)
     movie1_id = popular_movies.index[0]
     movie2_id = popular_movies.index[1]
@@ -169,7 +152,6 @@ def run_question1(ratings, movies):
     print(f"Cosine similarity between movies: {cosine_sim_movies:.4f}")
     print(f"Pearson correlation between movies: {pearson_sim_movies:.4f}")
     
-    # Interpret results
     interpret_similarity_results(cosine_sim_users, pearson_sim_users, cosine_sim_movies, pearson_sim_movies)
     
     return utility_matrix 
